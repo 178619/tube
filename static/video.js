@@ -708,7 +708,9 @@ window.addEventListener('load', () => {
             document.getElementById("center").style.backgroundImage = 'url(/static/icons/play.svg)'
             document.getElementById("play-pause").style.backgroundImage = 'url(/static/icons/play.svg)'
         }
-        Array.from(video.textTracks).filter(v=>v.mode=='showing').forEach((v)=>{
+        const textTracks = Array.from(video.textTracks).filter(v => v.mode=='showing')
+        if (!textTracks.length) document.querySelectorAll('#mask cue').forEach(c => c.remove())
+        textTracks.forEach(v => {
             const currentCueList = Array.from(document.querySelectorAll('#mask cue')).map(c=>c.cue)
             const activeCues = Array.from(v.activeCues || [])
             document.querySelectorAll('#mask cue').forEach(c=>{
