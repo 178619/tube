@@ -268,6 +268,7 @@ window.addEventListener('load', () => {
         video.style.backgroundImage = 'url(/t/' + target.pathname.slice(3) + ')'
         document.getElementById('album').pathname = (isMusic ? '/v/' : '/m/') + target.pathname.slice(3)
         document.getElementById('filelink').setAttribute('href', '/f/' + target.pathname.slice(3))
+        removeMenus()
         if (navigator.mediaSession) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: target.querySelector('h1')?.textContent || target.pathname.split('/').pop(),
@@ -384,6 +385,7 @@ window.addEventListener('load', () => {
         if (mask.classList.contains('shown')) {
             document.getElementById('center').style.transform = null
             mask.classList.remove('shown')
+            removeMenus()
         }
     }
     mask.onpointerdown = (e) => {
@@ -391,6 +393,7 @@ window.addEventListener('load', () => {
         if (e.pointerType == 'touch') {
             if (mask.classList.contains('shown')) {
                 mask.classList.remove('shown')
+                removeMenus()
             } else {
                 updateSeeker()
                 mask.classList.add('shown')
@@ -405,7 +408,12 @@ window.addEventListener('load', () => {
             document.getElementById('center').style.transform = null
         }
     }
-    const hideMask = () => {setTimeout(()=>{if (pointerWaitTime <= 0) mask.classList.remove('shown'); else hideMask()}, 100)}
+    const hideMask = () => {setTimeout(() => {
+        if (pointerWaitTime <= 0) {
+            mask.classList.remove('shown')
+            removeMenus()
+        } else hideMask()
+    }, 100)}
     const showMask = () => {
         updateSeeker()
         mask.classList.add('shown')
