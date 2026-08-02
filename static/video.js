@@ -265,6 +265,7 @@ window.addEventListener('load', () => {
         document.querySelector('details.description > span').textContent = target.getAttribute('description')
         document.title = target.querySelector('h1').textContent + ' - Stube'
         video.poster = '/t/' + target.pathname.slice(3)
+        video.style.backgroundImage = 'url(/t/' + target.pathname.slice(3) + ')'
         document.getElementById('album').pathname = (isMusic ? '/v/' : '/m/') + target.pathname.slice(3)
         document.getElementById('filelink').setAttribute('href', '/f/' + target.pathname.slice(3))
         if (navigator.mediaSession) {
