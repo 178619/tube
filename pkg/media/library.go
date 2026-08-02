@@ -40,9 +40,6 @@ func (lib *Library) AddPath(p *Path) error {
 		if p.Path == p2.Path {
 			return errors.New("media: duplicate library path")
 		}
-		if p.Prefix == p2.Prefix {
-			return errors.New("media: duplicate library prefix")
-		}
 	}
 	lib.Paths[p.Path] = p
 	log.Println("Added Path:", p.Path)
@@ -109,6 +106,9 @@ func (lib *Library) Add(fp string) error {
 		if err != nil {
 			return err
 		}
+		if lib.Captions[v.ID] != nil {
+			return errors.New("media: duplicate library path")
+		}
 		lib.Captions[v.ID] = v
 		log.Println("Added:", v.Path)
 		return nil
@@ -117,6 +117,9 @@ func (lib *Library) Add(fp string) error {
 		if err != nil {
 			return err
 		}
+		if lib.Images[v.ID] != nil {
+			return errors.New("media: duplicate library path")
+		}
 		lib.Images[v.ID] = v
 		log.Println("Added:", v.Path)
 		return nil
@@ -124,6 +127,9 @@ func (lib *Library) Add(fp string) error {
 		v, err := ParseVideo(p, n)
 		if err != nil {
 			return err
+		}
+		if lib.Videos[v.ID] != nil {
+			return errors.New("media: duplicate library path")
 		}
 		lib.Videos[v.ID] = v
 		log.Println("Added:", v.Path)
