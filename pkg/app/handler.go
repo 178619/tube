@@ -1,13 +1,14 @@
 package app
 
 import (
-	"net/http"
+	"encoding/json"
 	"log"
+	"net/http"
 	"path"
 	"strings"
-	"encoding/json"
-	"github.com/gorilla/mux"
+
 	"github.com/178619/stube/pkg/media"
+	"github.com/gorilla/mux"
 )
 
 type MediaData struct {
@@ -25,21 +26,21 @@ type MediaData struct {
 }
 
 type InfoResponse struct {
-    Status string    `json:"status"`
+	Status string    `json:"status"`
 	Data   MediaData `json:"data"`
 }
 
 type CaptionSummary struct {
-    Ref     string `json:"ref"`
-    SrcLang string `json:"srcLang"`
+	Ref     string `json:"ref"`
+	SrcLang string `json:"srcLang"`
 }
 
 type ErrorResponse struct {
-    Status string `json:"status"`
-    Error  struct {
-        Code    int    `json:"code"`
-        Message string `json:"message"`
-    } `json:"error"`
+	Status string `json:"status"`
+	Error  struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
 }
 
 // HTTP handler for /
@@ -254,38 +255,38 @@ func (a *App) imageHandler(w http.ResponseWriter, r *http.Request) {
 
 // HTTP handler for /n/id
 func (a *App) infoHandler(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    id := vars["id"]
-    if prefix, ok := vars["prefix"]; ok {
-        id = path.Join(prefix, id)
-    }
-    log.Printf("/n/%s", id)
-    w.Header().Set("Content-Type", "application/json; charset=utf-8")
-    playing, ok := a.Library.Videos[id]
-    if !ok {
-        w.WriteHeader(404)
-        json.NewEncoder(w).Encode(ErrorResponse{
-            Status: "error",
-            Error: struct {
-                Code    int    `json:"code"`
-                Message string `json:"message"`
-            }{Code: 404,Message: "File Not Found"},
-        })
-        return
-    }
+	vars := mux.Vars(r)
+	id := vars["id"]
+	if prefix, ok := vars["prefix"]; ok {
+		id = path.Join(prefix, id)
+	}
+	log.Printf("/n/%s", id)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	playing, ok := a.Library.Videos[id]
+	if !ok {
+		w.WriteHeader(404)
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Status: "error",
+			Error: struct {
+				Code    int    `json:"code"`
+				Message string `json:"message"`
+			}{Code: 404, Message: "File Not Found"},
+		})
+		return
+	}
 
-    matchedCaptions := []CaptionSummary{}
-    for _, m := range a.Library.Captions {
-        if m.Origin == playing.FileName || m.Origin == playing.BaseName {
-            matchedCaptions = append(matchedCaptions, CaptionSummary{
-                Ref:     m.Ref,
-                SrcLang: m.SrcLang,
-            })
-        }
-    }
+	matchedCaptions := []CaptionSummary{}
+	for _, m := range a.Library.Captions {
+		if m.Origin == playing.FileName || m.Origin == playing.BaseName {
+			matchedCaptions = append(matchedCaptions, CaptionSummary{
+				Ref:     m.Ref,
+				SrcLang: m.SrcLang,
+			})
+		}
+	}
 
-    json.NewEncoder(w).Encode(InfoResponse{
-        Status: "success",
+	json.NewEncoder(w).Encode(InfoResponse{
+		Status: "success",
 		Data: MediaData{
 			ID:          playing.ID,
 			Ref:         playing.Ref,
@@ -299,7 +300,7 @@ func (a *App) infoHandler(w http.ResponseWriter, r *http.Request) {
 			MIMEType:    playing.MIMEType,
 			Captions:    matchedCaptions,
 		},
-    })
+	})
 }
 
 // HTTP handler for /feed.xml

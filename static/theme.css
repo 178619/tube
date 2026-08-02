@@ -525,6 +525,7 @@ details.description {
     background: none;
     transition: height 200ms ease-in-out;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 #mask #control input[type="range"]:hover {

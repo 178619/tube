@@ -55,7 +55,7 @@ type TorControllerConfig struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Library: []*PathConfig{
-			&PathConfig{
+			{
 				Path:   "videos",
 				Prefix: "",
 			},
