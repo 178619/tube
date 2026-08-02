@@ -815,7 +815,17 @@ window.addEventListener('load', () => {
         }
         oneAlert('Volume: '+(video.muted ? 'Muted' : Math.floor(video.volume * 100)+'%'))
     }
-    const repeat = () => setTimeout(()=>{updateSeeker(); pointerWaitTime -= 20; repeat()}, 20)
+
+    let lastTime = performance.now()
+
+    const repeat = (currentTime) => {
+        const delta = currentTime - lastTime
+        lastTime = currentTime
+        updateSeeker()
+        pointerWaitTime -= delta
+        requestAnimationFrame(repeat)
+    }
+
     updateVolume()
     if (navigator.mediaSession) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -1141,7 +1151,8 @@ window.addEventListener('load', () => {
     listBar.appendChild(dislikeButton)
     player.appendChild(listBar)
     document.body.appendChild(playlistNavigator)
-    repeat()
+
+    requestAnimationFrame(repeat)
 })
 
 })()
