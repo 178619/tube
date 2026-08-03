@@ -22,6 +22,9 @@
         --playlist-hover-color: #1F5F7F;
         --playlist-hover-visited-color: #7F3F9F;
     }
+    .invert-light {
+        filter: invert(1);
+    }
 }
 @media (prefers-color-scheme: dark) {
     :root {
@@ -34,6 +37,9 @@
         --playlist-playing-color: #FFFFDF;
         --playlist-hover-color: #9FBFDF;
         --playlist-hover-visited-color: #DFBFFF;
+    }
+    .invert-dark {
+        filter: invert(1);
     }
 }
 
@@ -50,6 +56,10 @@
 a {
     color: inherit;
     text-decoration: none;
+}
+
+b {
+    font-weight: bold;
 }
 
 body {
@@ -84,7 +94,8 @@ nav > #search {
     height: 30px;
     width: 40%;
     max-width: 320px;
-    padding-inline: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     background: var(--background-sub-color);
     border: 1px solid #7F7F7F;
     color: var(--text-color);
@@ -96,9 +107,11 @@ nav > #search {
 }
 
 main {
+    width: -moz-fit-content;
     width: fit-content;
     max-width: 1200px;
-    margin-inline: auto;
+    margin-left: auto;
+    margin-right: auto;
     margin-top: 15px;
     white-space: nowrap;
 }
@@ -115,12 +128,10 @@ main {
     height: 480px;
     background: #000000;
     box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.25);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
 }
-
-/* #video::cue {
-    background: rgba(0,0,0,0);
-    text-shadow: 1px 1px #000000, 1px 0px #000000, 1px -1px #000000, 0px -1px #000000, -1px -1px #000000, -1px 0px #000000, -1px 1px #000000, 0px 1px #000000, 0 0 4px #000000, 0 0 4px #000000;
-} */
 
 #video::cue(.white) {
     color: rgba(255,255,255,1);
@@ -193,6 +204,7 @@ main {
     user-select: none;
     z-index: 1;
     display: none;
+    container-type: inline-size;
 }
 
 #player > h1 {
@@ -220,6 +232,7 @@ main {
 #player > details {
     margin-top: 10px;
     font-size: 80%;
+    width: -moz-fit-content;
     width: fit-content;
     transition: width 200ms;
     white-space: normal;
@@ -240,13 +253,15 @@ details > summary {
     overflow-x: hidden;
     overflow-y: auto;
     margin-top: 30px;
+    overscroll-behavior-y: contain;
 }
 
 #playlist > #search {
     height: 30px;
     width: inherit;
     max-width: inherit;
-    padding-inline: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     background: var(--background-sub-color);
     box-shadow: 0 0 0 1px rgb(127, 127, 127), 0 0 2px 2px rgba(0, 0, 0, 0.25);
     color: var(--text-color);
@@ -263,7 +278,7 @@ details > summary {
     border-top: 1px solid #000000;
 }
 
-#playlist > a.hidden {
+#playlist > a.hidden, #playlist > a.ousted {
     display: none;
 }
 
@@ -303,6 +318,7 @@ details > summary {
     line-height: 140%;
     text-overflow: ellipsis;
     overflow-x: clip;
+    word-break: break-word;
 }
 
 #playlist > a > div > h2 {
@@ -377,6 +393,7 @@ details.description {
     line-height: 150%;
     text-overflow: ellipsis;
     overflow-x: clip;
+    word-break: break-word;
 }
 
 #homeview > a > div > h2 {
@@ -483,7 +500,8 @@ details.description {
     bottom: 0;
     height: 80px;
     width: 100%;
-    padding-inline: 12px;
+    padding-left: 12px;
+    padding-right: 12px;
     background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.75), rgba(0,0,0,1));
     display: none;
     justify-content: space-between;
@@ -510,6 +528,7 @@ details.description {
     background: none;
     transition: height 200ms ease-in-out;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 #mask #control input[type="range"]:hover {
@@ -609,7 +628,8 @@ details.description {
 
 #mask #control #current {
     align-self: center;
-    margin-inline: 4px;
+    margin-left: 4px;
+    margin-right: 4px;
     font-family: 'Roboto Mono', 'Consolas', 'Lucida Console', monospace;
     color: #DFDFDF;
 }
@@ -658,6 +678,12 @@ details.description {
     display: none;
 }
 
+#mask #control #collapse {
+    background-image: url('/static/icons/tune.svg');
+    filter: invert(1);
+    display: none;
+}
+
 #mask #control #fullscreen {
     background-image: url('/static/icons/fullscreen.svg');
     filter: invert(1);
@@ -665,7 +691,8 @@ details.description {
 
 .fullscreen #mask #control {
     padding-bottom: 8px;
-    padding-inline: 24px;
+    padding-left: 24px;
+    padding-right: 24px;
 }
 
 .fullscreen #mask #control #fullscreen {
@@ -704,7 +731,8 @@ details.description {
     text-align: center;
     transition: opacity 1000ms ease-in-out;
     width: min-content;
-    margin: 2px auto;
+    margin: 2px;
+    margin-left: auto;
     padding: 4px;
     border-radius: 4px;
 }
@@ -763,6 +791,21 @@ details.description {
     background-color: rgba(0, 255, 0, 0.5);
 }
 
+#mask cue {
+    pointer-events: none;
+    position: absolute;
+    margin: auto;
+    color: #FFFFFF;
+    text-shadow: 1px 1px 0 #000000, 0px 1px 0 #000000, -1px 1px 0 #000000, 1px 0px 0 #000000, -1px 0px 0 #000000, 1px -1px 0 #000000, 0px -1px 0 #000000, -1px -1px 0 #000000, 0 0 4px #1F1F1F, 0 0 4px #1F1F1F;
+    width: -moz-fit-content;
+    width: fit-content;
+    padding-left: 2px;
+    padding-right: 2px;
+    white-space: pre;
+    font-size: 2.5cqi;
+    z-index: -1;
+}
+
 /* 360p */
 @media only screen and (max-width: 1180px) {
     #player {
@@ -775,10 +818,10 @@ details.description {
         height: 360px;
     }
     #mask > button#left {
-        right: 320px;
+        right: 288px;
     }
     #mask > button#right {
-        left: 320px;
+        left: 288px;
     }
 }
 
@@ -811,21 +854,21 @@ details.description {
         width: 64px;
     }
     #mask > button#left {
-        width: 64px;
-        height: 64px;
-        background-size: 48px;
-        right: 256px;
+        width: 48px;
+        height: 48px;
+        background-size: 36px;
+        right: 192px;
     }
     #mask > button#right {
+        width: 48px;
+        height: 48px;
+        background-size: 36px;
+        left: 192px;
+    }
+    #mask > button#center {
         width: 64px;
         height: 64px;
         background-size: 48px;
-        left: 256px;
-    }
-    #mask > button#center {
-        width: 80px;
-        height: 80px;
-        background-size: 64px;
     }
     #mask .minialert {
         font-size: 90%;
@@ -853,9 +896,11 @@ details.description {
     #playlist {
         width: 100%;
         max-width: 426px;
-        margin-top: 10px;
+        margin-top: 36px;
         margin-left: 0;
         display: block;
+        height: calc(100vh - 480px);
+        min-height: 240px;
     }
     p.description {
         display: none;
@@ -987,11 +1032,182 @@ nav > #range {
     height: 30px;
     width: 40%;
     max-width: 320px;
-    padding-inline: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     color: var(--text-color);
     position: absolute;
     top: 10px;
     right: 10px;
     font-size: 13px;
     font-weight: normal;
+}
+
+#player #listBar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+#player #listBar button {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    background-color: transparent;
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: opacity 250ms, transform 100ms;
+    cursor: pointer;
+    margin-right: 12px;
+    opacity: 0.5;
+}
+
+#player #listBar button.listed:not(:active) {
+    opacity: 1;
+}
+
+#player #listBar button:active {
+    transform: scale(0.875);
+}
+
+#player #listBar button#like {
+    background-image: url(/static/icons/thumb-up.svg);
+}
+
+#player #listBar button#dislike {
+    background-image: url(/static/icons/thumb-down.svg);
+}
+
+#player #listBar button#editPlaylist {
+    background-image: url(/static/icons/playlist-edit.svg);
+}
+
+#playlistNavigator {
+    position: fixed;
+    z-index: 1200;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    backdrop-filter: brightness(0.75);
+}
+
+#playlistNavigator.hidden {
+    display: none;
+}
+
+#playlistNavigator h1 {
+    white-space: normal;
+    overflow-y: hidden;
+    max-height: 2lh;
+    line-height: 140%;
+    text-overflow: ellipsis;
+    overflow-x: clip;
+    word-break: break-word;
+}
+
+#playlistNavigator h2 {
+    margin-top: 2px;
+    color: var(--date-color);
+    font-size: 90%;
+    max-height: 1lh;
+    text-overflow: ellipsis;
+    overflow-x: clip;
+}
+
+#playlistNavigator > div {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    margin: auto;
+    width: -moz-fit-content;
+    width: fit-content;
+    height: -moz-fit-content;
+    height: fit-content;
+    background-color: var(--playlist-background-color);
+}
+
+#playlistNavigator button {
+    width: 24px;
+    height: 24px;
+    background-color: transparent;
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: opacity 250ms, transform 100ms;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+    #playlistNavigator button {
+        filter: invert(1);
+    }
+}
+
+#playlistNavigator button:active {
+    transform: scale(0.875);
+}
+
+#playlistNavigator #playlistNavigatorBar {
+    display: flex;
+    padding: 8px 12px;
+    justify-content: space-between;
+}
+
+#playlistNavigator #playlistNavigatorBar h1 {
+    font-weight: bold;
+}
+
+#playlistNavigator #playlistNavigatorView > div {
+    display: flex;
+    padding: 10px;
+    position: relative;
+    min-height: 54px;
+    border-top: 1px solid #000000;
+}
+
+#playlistNavigator #playlistNavigatorView > div:hover {
+    backdrop-filter: brightness(1.25);
+    color: var(--playlist-hover-color);
+}
+
+#playlistNavigator #playlistNavigatorView > div > div:first-child {
+    flex: 1;
+    padding-right: 12px;
+}
+
+.button-clear {
+    background-image: url('/static/icons/delete-empty.svg')
+}
+
+.button-create {
+    background-image: url('/static/icons/playlist-plus.svg')
+}
+
+.button-unfilter {
+    background-image: url('/static/icons/filter-remove.svg')
+}
+
+.button-close {
+    background-image: url('/static/icons/close.svg')
+}
+
+.button-delete {
+    background-image: url('/static/icons/delete-forever.svg')
+}
+
+.button-edit {
+    background-image: url('/static/icons/text-box-edit.svg')
+}
+
+.button-add {
+    background-image: url('/static/icons/video-plus.svg')
+}
+
+.button-remove {
+    background-image: url('/static/icons/video-minus.svg')
+}
+
+.button-play {
+    background-image: url('/static/icons/playlist-play.svg')
 }

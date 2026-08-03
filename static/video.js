@@ -1,16 +1,116 @@
+(()=>{
+
+const {location, document} = window
+
 const tempStyle = document.createElement('style')
 tempStyle.innerHTML = 'video {visibility: hidden;}'
 document.head.appendChild(tempStyle)
-const init = () => {
+
+const cueJSStyle = document.createElement('style')
+cueJSStyle.innerHTML = '::cue {visibility: hidden;}'
+document.head.appendChild(cueJSStyle)
+let cueJS = true
+
+let currentPlaylist = null
+
+const trackSorter = (v1, v2) => {
+    let e1 = 0, e2 = 0
+    if (v1.hasAttribute('disc')) e1 += parseInt(v1.getAttribute('disc')) << 16
+    if (v1.hasAttribute('track')) e1 += parseInt(v1.getAttribute('track'))
+    if (v2.hasAttribute('disc')) e2 += parseInt(v2.getAttribute('disc')) << 16
+    if (v2.hasAttribute('track')) e2 += parseInt(v2.getAttribute('track'))
+    return e1 - e2
+}
+
+const searchKeyTable_0 = [
+    'ъ', 'ь', 'ー', 'ᄋ', '­', '¿', '¡', '⸘'
+]
+
+const searchKeyTable_1 = {
+    '‚': '\'', '„': '"', '‘': '\'', '’': '\'', '“': '"', '”': '"', '•': ' ', '–': '-', '—': '-',
+    '™': 'tm', 'æ': 'ae', 'œ': 'oe', 'ɶ': 'oe', 'þ': 'th', '«': '"', '»': '"', '×': '*', ';': ',',
+
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+    'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts',
+    'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ы': 'y', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+
+    'ß': 'ss',
+    
+    'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
+    'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
+    'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
+    'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+    'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
+    'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
+    'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
+    'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
+    'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
+    'わ': 'wa', 'を': 'wo', 'ん': 'n',
+    'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
+    'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
+    'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
+    'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
+    'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
+    'っ': 't',
+    'ぁ': 'a', 'ぃ': 'i', 'ぅ': 'u', 'ぇ': 'e', 'ぉ': 'o',
+    'ゃ': 'ya', 'ゅ': 'yu', 'ょ': 'yo', 'ゎ': 'wa',
+
+    'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
+    'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
+    'サ': 'sa', 'シ': 'shi', 'ス': 'su', 'セ': 'se', 'ソ': 'so',
+    'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
+    'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',
+    'ハ': 'ha', 'ヒ': 'hi', 'フ': 'fu', 'ヘ': 'he', 'ホ': 'ho',
+    'マ': 'ma', 'ミ': 'mi', 'ム': 'mu', 'メ': 'me', 'モ': 'mo',
+    'ヤ': 'ya', 'ユ': 'yu', 'ヨ': 'yo',
+    'ラ': 'ra', 'リ': 'ri', 'ル': 'ru', 'レ': 're', 'ロ': 'ro',
+    'ワ': 'wa', 'ヲ': 'wo', 'ン': 'n',
+    'ガ': 'ga', 'ギ': 'gi', 'グ': 'gu', 'ゲ': 'ge', 'ゴ': 'go',
+    'ザ': 'za', 'ジ': 'ji', 'ズ': 'zu', 'ゼ': 'ze', 'ゾ': 'zo',
+    'ダ': 'da', 'ヂ': 'ji', 'ヅ': 'zu', 'デ': 'de', 'ド': 'do',
+    'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo',
+    'パ': 'pa', 'ピ': 'pi', 'プ': 'pu', 'ペ': 'pe', 'ポ': 'po',
+    'ッ': 't',
+    'ァ': 'a', 'ィ': 'i', 'ゥ': 'u', 'ェ': 'e', 'ォ': 'o',
+    'ャ': 'ya', 'ュ': 'yu', 'ョ': 'yo', 'ヮ': 'wa',
+
+    '　': ' ', '、': ',', '。': '.', '〇': '0', '〈': '\'', '〉': '\'', '《': '"', '》': '"',
+    '「': '\'', '」': '\'', '『': '"', '』': '"', '【': '[', '】': ']', '〜': '~', '゠': ' ', '・': ' ',
+}
+
+const searchKeyTable_2 = {
+    'α': 'a', 'β': 'b', 'γ': 'g', 'δ': 'd', 'ε': 'e', 'ζ': 'z', 'η': 'i', 'θ': 'th',
+    'ι': 'i', 'κ': 'k', 'λ': 'l', 'μ': 'm', 'ν': 'n', 'ξ': 'x', 'ο': 'o', 'π': 'p',
+    'ρ': 'r', 'σ': 's', 'τ': 't', 'υ': 'y', 'φ': 'f', 'χ': 'ch', 'ψ': 'ps', 'ω': 'o',
+
+    'ᄀ': 'g', 'ᄁ': 'gg', 'ᄂ': 'n', 'ᄃ': 'd', 'ᄄ': 'dd', 'ᄅ': 'r', 'ᄆ': 'm', 'ᄇ': 'b', 'ᄈ': 'bb',
+    'ᄉ': 's', 'ᄊ': 'ss', 'ᄋ': '', 'ᄌ': 'j', 'ᄍ': 'jj', 'ᄎ': 'ch', 'ᄏ': 'k', 'ᄐ': 't', 'ᄑ': 'p', 'ᄒ': 'h',
+
+    'ᅡ': 'a', 'ᅢ': 'ae', 'ᅣ': 'ya', 'ᅤ': 'yae', 'ᅥ': 'eo', 'ᅦ': 'e', 'ᅧ': 'yeo', 'ᅨ': 'ye', 'ᅩ': 'o',
+    'ᅪ': 'wa', 'ᅫ': 'wae', 'ᅬ': 'oe', 'ᅭ': 'yo', 'ᅮ': 'u', 'ᅯ': 'wo', 'ᅰ': 'we', 'ᅱ': 'wi', 'ᅲ': 'yu',
+    'ᅳ': 'eu', 'ᅴ': 'ui', 'ᅵ': 'i',
+
+    // Definitely need fix
+    'ᆨ': 'k', 'ᆩ': 'k', 'ᆪ': 'k', 'ᆫ': 'n', 'ᆬ': 'n', 'ᆭ': 'n', 'ᆮ': 't', 'ᆯ': 'l', 'ᆰ': 'l',
+    'ᆱ': 'l', 'ᆲ': 'l', 'ᆳ': 'l', 'ᆴ': 'l', 'ᆵ': 'l', 'ᆶ': 'l', 'ᆷ': 'm', 'ᆸ': 'p', 'ᆹ': 'p',
+    'ᆺ': 't', 'ᆻ': 't', 'ᆼ': 'ng', 'ᆽ': 't', 'ᆾ': 't', 'ᆿ': 'k', 'ᇀ': 't', 'ᇁ': 'p', 'ᇂ': 't',
+    
+    '□': '■', '▫': '▪', '▭': '▬', '▯': '▮', '▱': '▰',
+    '△': '▲', '▵': '▴', '▷': '▶', '▹': '▸', '▻': '►', '▽': '▼', '▿': '▾', '◁': '◀', '◃': '◂', '◅': '◄',
+    '◇': '◆', '●': '○', '◼': '◻', '◾': '◽', '◦': '•',
+    '☆': '★', '☏': '☎', '♤': '♠', '♥': '♡', '♦': '♢', '♧': '♣',
+    
+    '⁄': '/', '‽': '!?'
+}
+
+const getSearchKey = (v) => {
+    if (!v) return ''
+    return v.toLowerCase().normalize('NFKC').split('').map((c)=>(!searchKeyTable_0.includes(c) ? (searchKeyTable_1[c] || c) : '')).join('').normalize('NFKD').split('').map((c)=>(searchKeyTable_1[c] || searchKeyTable_2[c] || c)).join('').trim().replace(/\s+/g, ' ')
+}
+
+window.addEventListener('load', () => {
     const isMusic = location.pathname.startsWith('/m/')
-    const trackSorter = (v1, v2) => {
-        let e1 = 0, e2 = 0
-        if (v1.hasAttribute('disc')) e1 += parseInt(v1.getAttribute('disc')) * 10**6
-        if (v1.hasAttribute('track')) e1 += parseInt(v1.getAttribute('track'))
-        if (v2.hasAttribute('disc')) e2 += parseInt(v2.getAttribute('disc')) * 10**6
-        if (v2.hasAttribute('track')) e2 += parseInt(v2.getAttribute('track'))
-        return e1 - e2
-    }
     const miniAlert = (v) => {
         const d = document.createElement('div')
         d.classList.add('minialert')
@@ -32,7 +132,7 @@ const init = () => {
         d.classList.add('menu')
         const head = document.createElement('div')
         head.classList.add('head')
-        head.innerText = t
+        head.textContent = t
         const closer = document.createElement('button')
         closer.classList.add('closer')
         closer.onclick = (e) => {
@@ -60,7 +160,7 @@ const init = () => {
         }
     }
     let pointerWaitTime = 0
-    let musicLoopMode = false
+    let musicLoopMode = null
     const keyList = [
         " ", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", ",", ".", ">", "<", "Home", "End",
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "/", "f", "c", "k", "m", "j", "l", "N", "P"
@@ -71,22 +171,36 @@ const init = () => {
         + (((Math.floor(v % 3600 / 60) < 10 ? '0' : '') + Math.floor(v % 3600 / 60)) || '00') + ':'
         + (((Math.floor(v % 60) < 10 ? '0' : '') + Math.floor(v % 60)) || '00')
     }
-    const languageNames = new Intl.DisplayNames(navigator.languages, { type: 'language' });
-    if (document.getElementById('search')) document.getElementById('search').oninput = () => {
-        const key = document.getElementById('search').value.toLocaleLowerCase()
+    const languageNames = window.Intl?.DisplayNames ? new Intl.DisplayNames(navigator.languages, { type: 'language' }) : undefined
+    const updateVisibility = () => {
+        const key = getSearchKey(document.getElementById('search')?.value)
         document.querySelectorAll('#playlist > a').forEach((v)=>{
-            if (v.title.toLocaleLowerCase().includes(key) || v.name.toLocaleLowerCase().includes(key)) v.className = ''; else v.className = 'hidden';
+            v.classList.toggle('hidden', !(!key ||
+                getSearchKey(v.title).includes(key) ||
+                getSearchKey(v.name).includes(key) ||
+                getSearchKey(v.getAttribute('album')).includes(key) ||
+                getSearchKey(v.getAttribute('artist')).includes(key)
+            ))
+            v.classList.toggle('ousted', !(!currentPlaylist || currentPlaylist.includes(v.pathname.slice(3))))
         })
     }
-    const mask = document.getElementById("mask")
+    if (document.getElementById('search')) document.getElementById('search').oninput = updateVisibility
+    const mask = document.getElementById('mask')
     if (!mask) {
         tempStyle.remove()
         return
     }
     mask.style.display = 'block'
-    const video = document.getElementById("video")
+    const video = document.getElementById('video')
+    const isWebKit = /AppleWebKit(?!.*Chrome|.*Chromium)/i.test(window.navigator?.userAgent ?? '')
+    if (isWebKit) {
+        video.style.backgroundImage = 'url(/t/' + location.pathname.slice(3) + ')'
+        video.addEventListener('play', () => {
+            if (video.videoWidth && video.videoHeight) video.style.backgroundImage = null
+        })
+    }
     if (video.hasAttribute('controls')) video.removeAttribute('controls')
-    const player = document.getElementById("player")
+    const player = document.getElementById('player')
     const playOrPause = () => {
         if (!!(video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2)) {
             video.pause()
@@ -112,9 +226,9 @@ const init = () => {
     }
 
     const toPrev = () => {
-        const playlist = Array.from(document.querySelectorAll('#playlist > a')).sort(trackSorter)
-        const index = playlist.findIndex((v)=>{return v.className.includes('playing')})
-        playlist[index].classList.remove('playing')
+        const playlist = Array.from(document.querySelectorAll('#playlist > a:not(.ousted)'))
+        const index = playlist.findIndex((v)=>{return v.classList.contains('playing')})
+        document.querySelector('.playing')?.classList.remove('playing')
         const target = playlist[(index-1+playlist.length)%playlist.length]
         target.classList.add('playing')
         toVideo(target, true)
@@ -122,43 +236,73 @@ const init = () => {
     }
 
     const toNext = () => {
-        const playlist = Array.from(document.querySelectorAll('#playlist > a')).sort(trackSorter)
-        const index = playlist.findIndex((v)=>{return v.className.includes('playing')})
-        playlist[index].classList.remove('playing')
+        const playlist = Array.from(document.querySelectorAll('#playlist > a:not(.ousted)'))
+        const index = playlist.findIndex((v)=>{return v.classList.contains('playing')})
+        document.querySelector('.playing')?.classList.remove('playing')
         const target = playlist[(index+1)%playlist.length]
         target.classList.add('playing')
         toVideo(target, true)
         video.play()
     }
 
-    const toVideo = (target, scroll=false) => {
+    const toRandom = () => {
+        const playlist = Array.from(document.querySelectorAll('#playlist > a:not(.ousted)'))
+        const index = playlist.findIndex((v)=>{return v.classList.contains('playing')})
+        document.querySelector('.playing')?.classList.remove('playing')
+        let ni = Math.floor(Math.random()*(playlist.length-1))
+        if (ni >= index) ni += 1
+        const target = playlist[ni%playlist.length]
+        target.classList.add('playing')
+        toVideo(target, true)
+        video.play()
+    }
+
+    const toVideo = (target, scroll=false, pushState=true) => {
+        const { playbackRate } = video
         video.src = '/f/' + target.pathname.slice(3)
-        if (scroll) {
-            target.scrollIntoView({behavior: "smooth"})
-            document.body.scrollIntoView()
-        }
-        window.history.pushState(null, null, location.origin+target.pathname);
-        document.querySelector('#player > h1').innerText = target.querySelector('h1').innerText
-        document.querySelector('#mask > h1').innerText = target.querySelector('h1').innerText
-        document.querySelectorAll('#player > h2')[0].innerText = target.getAttribute('artist')
-        document.querySelectorAll('#player > h2')[1].innerText = target.querySelector('h2').innerText
-        document.querySelector('p.description').innerText = target.getAttribute('description')
-        document.querySelector('details.description > span').innerText = target.getAttribute('description')
-        document.title = target.querySelector('h1').innerText + ' - Stube'
+        video.playbackRate = playbackRate
+        if (scroll) document.querySelector('#playlist').scrollTo({behavior: 'smooth', top:target.offsetTop-document.querySelector('#playlist').offsetTop})
+        if (pushState) window.history.pushState(null, null, location.origin+target.pathname)
+        document.querySelector('#player > h1').textContent = target.querySelector('h1').textContent
+        document.querySelector('#mask > h1').textContent = target.querySelector('h1').textContent
+        document.querySelectorAll('#player > h2')[0].textContent = target.getAttribute('artist')
+        document.querySelectorAll('#player > h2')[1].textContent = target.querySelector('h2')?.textContent
+        if (!isMusic) document.querySelectorAll('#player > h2')[2].textContent = target.getAttribute('album')
+        document.querySelector('p.description').textContent = target.getAttribute('description')
+        document.querySelector('details.description > span').textContent = target.getAttribute('description')
+        document.title = target.querySelector('h1').textContent + ' - Stube'
         video.poster = '/t/' + target.pathname.slice(3)
-        if (document.getElementById('album')) document.getElementById('album').pathname = '/v/' + target.pathname.slice(3)
+        if (isWebKit) video.style.backgroundImage = 'url(/t/' + target.pathname.slice(3) + ')'
+        document.getElementById('album').pathname = (isMusic ? '/v/' : '/m/') + target.pathname.slice(3)
+        document.getElementById('filelink').setAttribute('href', '/f/' + target.pathname.slice(3))
+        removeMenus()
         if (navigator.mediaSession) {
             navigator.mediaSession.metadata = new MediaMetadata({
-                title: target.querySelector('h1').innerText,
-                artist: target.getAttribute('artist'),
-                album: isMusic ? document.querySelectorAll('#player > h2')[2].innerText : undefined,
+                title: target.querySelector('h1')?.textContent || target.pathname.split('/').pop(),
+                artist: target.getAttribute('artist') || undefined,
+                album: document.querySelectorAll('#player > h2')[2]?.textContent || undefined,
                 artwork: [  
                     {
-                        src: window.location.origin + '/t/' + target.pathname.slice(3)
+                        src: location.origin + '/t/' + target.pathname.slice(3)
                     }
                 ]
-            });
+            })
         }
+        fetch('/n/' + target.pathname.slice(3)).then(data => data.json()).then(({status, data}) => {
+            if (status != 'success') return
+            video.querySelectorAll('track').forEach(track => track.remove())
+            if (data.captions?.length) {
+                document.getElementById('captions').style.display = ''
+                data.captions?.forEach(({ref, srcLang}) => {
+                    const track = document.createElement('track')
+                    track.src = location.origin + '/f/' + ref
+                    track.srclang = srcLang
+                    track.kind = 'captions'
+                    track.label = srcLang
+                    video.appendChild(track)
+                })
+            } else document.getElementById('captions').style.display = 'none'
+        })
     }
 
     // const locationOptions = Object.fromEntries(location.search.slice(1).split('&').filter((v)=>{return v.length}).map((v)=>{return [v.split('=')[0], v.split('=').slice(1).join('=')]}))
@@ -205,11 +349,11 @@ const init = () => {
                 oneAlert('To: '+getTimeString(video.duration))
                 break
             case "<":
-                if (video.playbackRate > 0.5) video.playbackRate = Math.round(video.playbackRate * 4 - 1) / 4; else video.playbackRate = 0.25;
+                if (video.playbackRate > 0.5) video.playbackRate = Math.round(video.playbackRate * 4 - 1) / 4; else video.playbackRate = 0.25
                 oneAlert('Playspeed: ' + video.playbackRate + 'x')
                 break
             case ">":
-                if (video.playbackRate < 3.75) video.playbackRate = Math.round(video.playbackRate * 4 + 1) / 4;  else video.playbackRate = 4;
+                if (video.playbackRate < 3.75) video.playbackRate = Math.round(video.playbackRate * 4 + 1) / 4;  else video.playbackRate = 4
                 oneAlert('Playspeed: ' + video.playbackRate + 'x')
                 break
             case "m":
@@ -217,23 +361,21 @@ const init = () => {
                 updateVolume()
                 break
             case "ArrowUp":
-                if (video.volume < 0.95) video.volume = Math.round(video.volume * 20 + 1) / 20; else video.volume = 1;
+                if (video.volume < 0.95) video.volume = Math.round(video.volume * 20 + 1) / 20; else video.volume = 1
                 updateVolume()
                 break
             case "ArrowDown":
-                if (video.volume > 0.05) video.volume = Math.round(video.volume * 20 - 1) / 20; else video.volume = 0;
+                if (video.volume > 0.05) video.volume = Math.round(video.volume * 20 - 1) / 20; else video.volume = 0
                 updateVolume()
                 break
             case "f":
                 getFullscreen()
                 break
             case "N":
-                if (!isMusic) return
                 toNext()
                 oneAlert('To: Next Track')
                 break
             case "P":
-                if (!isMusic) return
                 toPrev()
                 oneAlert('To: Previous Track')
                 break
@@ -241,22 +383,24 @@ const init = () => {
         updateSeeker()
     }
     mask.onmouseenter = (e) => {
-        if (!mask.className.includes('shown')) {
+        if (!mask.classList.contains('shown')) {
             updateSeeker()
             mask.classList.add('shown')
         }
     }
     mask.onmouseleave = (e) => {
-        if (mask.classList.toString().includes('shown')) {
+        if (mask.classList.contains('shown')) {
             document.getElementById('center').style.transform = null
             mask.classList.remove('shown')
+            removeMenus()
         }
     }
     mask.onpointerdown = (e) => {
         if (e.target.id != 'mask' || e.pointerType == 'mouse' && e.button != 0) return
         if (e.pointerType == 'touch') {
-            if (mask.classList.toString().includes('shown')) {
+            if (mask.classList.contains('shown')) {
                 mask.classList.remove('shown')
+                removeMenus()
             } else {
                 updateSeeker()
                 mask.classList.add('shown')
@@ -271,7 +415,12 @@ const init = () => {
             document.getElementById('center').style.transform = null
         }
     }
-    const hideMask = () => {setTimeout(()=>{if (pointerWaitTime <= 0) mask.classList.remove('shown'); else hideMask()}, 100)}
+    const hideMask = () => {setTimeout(() => {
+        if (pointerWaitTime <= 0) {
+            mask.classList.remove('shown')
+            removeMenus()
+        } else hideMask()
+    }, 100)}
     const showMask = () => {
         updateSeeker()
         mask.classList.add('shown')
@@ -293,10 +442,10 @@ const init = () => {
             updateSeeker()
         }
     }
-    document.querySelector('#mask h1').onpointerdown = (e) => {
+    document.querySelector('#mask h1').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         if (!document.querySelector('.embed')) return
-        open(location.origin + location.pathname.replace('/e/', '/v/'))
+        open(location.origin + '/v/' + location.pathname.slice(3))
     }
     document.getElementById('center').onpointerdown = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
@@ -305,7 +454,30 @@ const init = () => {
     document.getElementById('seeker').onwheel = (e) => {
         if (e.ctrlKey) return
         e.preventDefault()
-        addTime(e.wheelDeltaY / 100)
+        let delta = -e.deltaY
+        if (delta) {
+            switch (e.deltaMode) {
+                case 2:
+                    delta *= 24
+                case 1:
+                    delta *= 40
+            }
+        } else delta = e.wheelDeltaY
+        addTime(delta / 100)
+    }
+    mask.onwheel = (e) => {
+        if (e.ctrlKey || e.target.nodeName == 'LI' || e.target.nodeName == 'INPUT' || e.target.nodeName == 'BUTTON' && e.target.id != 'left' && e.target.id != 'center' && e.target.id != 'right') return
+        e.preventDefault()
+        let delta = -e.deltaY
+        if (delta) {
+            switch (e.deltaMode) {
+                case 2:
+                    delta *= 24
+                case 1:
+                    delta *= 40
+            }
+        } else delta = e.wheelDeltaY
+        addTime(delta / 100)
     }
     document.getElementById('seeker').oninput = () => {
         video.currentTime = document.getElementById('seeker').value / 1000
@@ -315,26 +487,37 @@ const init = () => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         playOrPause()
     }
-    document.getElementById('loop').onpointerdown = (e) => {
+    document.getElementById('loop').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
-        if (musicLoopMode || video.loop && !isMusic) {
-            musicLoopMode = false
+        if (musicLoopMode == 'random' || video.loop && document.querySelector('.embed')) {
+            if (isMusic) Array.from(document.querySelectorAll('#playlist > a')).sort(trackSorter).forEach((v)=>{
+                document.getElementById('playlist').appendChild(v)
+            })
+            musicLoopMode = null
             video.loop = false
             document.getElementById("loop").style.backgroundImage = 'url(/static/icons/repeat-off.svg)'
             oneAlert('Repeat: Off')
+        } else if (musicLoopMode == 'repeat') {
+            if (isMusic) Array.from(document.querySelectorAll('#playlist > a:not(.playing)')).map((v)=>[v, Math.random()]).sort(([v1, a1], [v2, a2])=>a1-a2).map(([v])=>v).forEach((v)=>{
+                document.getElementById('playlist').appendChild(v)
+            })
+            musicLoopMode = 'random'
+            video.loop = false
+            document.getElementById("loop").style.backgroundImage = 'url(/static/icons/shuffle.svg)'
+            oneAlert('Repeat: Random')
         } else if (!video.loop) {
-            musicLoopMode = false
+            musicLoopMode = null
             video.loop = true
             document.getElementById("loop").style.backgroundImage = 'url(/static/icons/repeat-once.svg)'
             oneAlert('Repeat: One')
         } else {
-            musicLoopMode = true
+            musicLoopMode = 'repeat'
             video.loop = false
             document.getElementById("loop").style.backgroundImage = 'url(/static/icons/repeat.svg)'
             oneAlert('Repeat: All')
         }
     }
-    document.getElementById('volume-icon').onpointerdown = (e) => {
+    document.getElementById('volume-icon').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         video.muted = !video.muted
         updateVolume()
@@ -343,9 +526,9 @@ const init = () => {
         if (e.ctrlKey) return
         e.preventDefault()
         if (e.deltaY < 0) {
-            if (video.volume < 0.95) video.volume = Math.round(video.volume * 20 + 1) / 20; else video.volume = 1;
+            if (video.volume < 0.95) video.volume = Math.round(video.volume * 20 + 1) / 20; else video.volume = 1
         } else if (e.deltaY > 0) {
-            if (video.volume > 0.05) video.volume = Math.round(video.volume * 20 - 1) / 20; else video.volume = 0;
+            if (video.volume > 0.05) video.volume = Math.round(video.volume * 20 - 1) / 20; else video.volume = 0
         }
         document.getElementById('volume-icon').style.transform = 'scale(0.875)'
         setTimeout(()=>{document.getElementById('volume-icon').style.transform = null}, 100)
@@ -359,26 +542,40 @@ const init = () => {
         if (e.ctrlKey) return
         e.preventDefault()
         if (e.deltaY < 0) {
-            if (video.volume < 0.95) video.volume = Math.round(video.volume * 20 + 1) / 20; else video.volume = 1;
+            if (video.volume < 0.95) video.volume = Math.round(video.volume * 20 + 1) / 20; else video.volume = 1
         } else if (e.deltaY > 0) {
-            if (video.volume > 0.05) video.volume = Math.round(video.volume * 20 - 1) / 20; else video.volume = 0;
+            if (video.volume > 0.05) video.volume = Math.round(video.volume * 20 - 1) / 20; else video.volume = 0
         }
         updateVolume()
     }
     if (!video.textTracks.length) document.getElementById('captions').style.display = 'none'
-    document.getElementById('captions').onpointerdown = (e) => {
+    document.getElementById('captions').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         const tracks = Array.from(video.textTracks)
         const ul = document.createElement('ul')
+        const cl = document.createElement('li')
+        cl.textContent = cueJS ? 'Mode: JS' : 'Mode: Browser'
+        cl.onclick = () => {
+            if (cueJS) {
+                cueJSStyle.innerHTML = 'cue {display: none;}'
+                cl.textContent = 'Mode: Browser'
+                cueJS = false
+            } else {
+                cueJSStyle.innerHTML = '::cue {visibility: hidden;}'
+                cl.textContent = 'Mode: JS'
+                cueJS = true
+            }
+        }
+        ul.appendChild(cl)
         tracks.forEach((v)=>{
             const li = document.createElement('li')
             try {
-                li.innerText = languageNames.of(v.language)
+                li.textContent = languageNames.of(v.language)
             } catch {
-                li.innerText = v.language
+                li.textContent = v.language
             }
             if (v.mode == 'showing') li.classList.add('enabled')
-            li.onpointerdown = (e) => {
+            li.onclick = (e) => {
                 if (e.pointerType == 'mouse' && e.button != 0) return
                 if (v.mode == 'showing') {
                     v.mode = 'disabled'
@@ -392,7 +589,7 @@ const init = () => {
         })
         setMenu('Captions', ul)
     }
-    document.getElementById('screenshot').onpointerdown = (e) => {
+    document.getElementById('screenshot').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         if (!video.videoWidth || !video.videoHeight) {
             const a = document.createElement('a')
@@ -418,13 +615,21 @@ const init = () => {
         oneAlert('Screenshot Taken')
     }
     const speedList = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 4]
-    document.getElementById('playspeed').onpointerdown = (e) => {
+    document.getElementById('playspeed').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         const ul = document.createElement('ul')
+        const li = document.createElement('li')
+        li.textContent = 'Toggle Preserve Pitch'
+        li.onclick = (e) => {
+            if (e.pointerType == 'mouse' && e.button != 0) return
+            video.preservesPitch = !video.preservesPitch
+            oneAlert('Preserve Pitch: ' + video.preservesPitch)
+        }
+        ul.appendChild(li)
         speedList.forEach((v)=>{
             const li = document.createElement('li')
-            li.innerText = v + 'x'
-            li.onpointerdown = (e) => {
+            li.textContent = v + 'x'
+            li.onclick = (e) => {
                 if (e.pointerType == 'mouse' && e.button != 0) return
                 video.playbackRate = v
                 oneAlert('Playspeed: ' + video.playbackRate + 'x')
@@ -437,24 +642,24 @@ const init = () => {
         if (e.ctrlKey) return
         e.preventDefault()
         if (e.deltaY < 0) {
-            if (video.playbackRate < 3.75) video.playbackRate = Math.round(video.playbackRate * 4 + 1) / 4; else video.playbackRate = 4;
+            if (video.playbackRate < 3.875) video.playbackRate = Math.round(video.playbackRate * 8 + 1) / 8; else video.playbackRate = 4
         } else if (e.deltaY > 0) {
-            if (video.playbackRate > 0.5) video.playbackRate = Math.round(video.playbackRate * 4 - 1) / 4; else video.playbackRate = 0.25;
+            if (video.playbackRate > 0.375) video.playbackRate = Math.round(video.playbackRate * 8 - 1) / 8; else video.playbackRate = 0.25
         }
         oneAlert('Playspeed: ' + video.playbackRate + 'x')
         document.getElementById('playspeed').style.transform = 'scale(0.875)'
         setTimeout(()=>{document.getElementById('playspeed').style.transform = null}, 100)
     }
-    document.getElementById('embedlink').onpointerdown = (e) => {
+    document.getElementById('embedlink').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button == 1) {
-            open(location.origin + location.pathname.replace('/v/', '/e/'))
+            open(location.origin + '/e/' + location.pathname.slice(3))
             return
         }
         if (e.pointerType == 'mouse' && e.button != 0) return
-        navigator.clipboard.writeText('<iframe src="'+location.origin+location.pathname.replace('/v/', '/e/')+'" width=320 height=180 allowfullscreen></iframe>')
+        navigator.clipboard.writeText('<iframe src="' + location.origin + '/e/' + location.pathname.slice(3) + '" width=320 height=180 allowfullscreen></iframe>')
         oneAlert('HTML code Copied to Clipboard.')
     }
-    document.getElementById('filelink').onpointerdown = (e) => {
+    document.getElementById('filelink').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         const a = document.createElement('a')
         a.href = document.getElementById('filelink').getAttribute('href')
@@ -462,28 +667,28 @@ const init = () => {
         a.click()
         a.remove()
     }
-    document.getElementById('current').style.display = 'block';
-    document.getElementById('collapse').onpointerdown = (e) => {
+    document.getElementById('current').style.display = 'block'
+    document.getElementById('collapse').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         if (document.getElementById('current').style.display != 'block') {
-            document.getElementById('current').style.display = 'block';
-            if (video.textTracks.length) document.getElementById('captions').style.display = '';
-            document.getElementById('screenshot').style.display = '';
-            document.getElementById('playspeed').style.display = '';
-            document.getElementById('embedlink').style.display = '';
-            document.getElementById('filelink').style.display = '';
+            document.getElementById('current').style.display = 'block'
+            if (video.textTracks.length) document.getElementById('captions').style.display = ''
+            document.getElementById('screenshot').style.display = ''
+            document.getElementById('playspeed').style.display = ''
+            document.getElementById('embedlink').style.display = ''
+            document.getElementById('filelink').style.display = ''
             document.getElementById("collapse").style.backgroundImage = 'url(/static/icons/tune.svg)'
         } else {
-            document.getElementById('current').style.display = '';
-            if (video.textTracks.length) document.getElementById('captions').style.display = 'block';
-            document.getElementById('screenshot').style.display = 'block';
-            document.getElementById('playspeed').style.display = 'block';
-            document.getElementById('embedlink').style.display = 'block';
-            document.getElementById('filelink').style.display = 'block';
+            document.getElementById('current').style.display = ''
+            if (video.textTracks.length) document.getElementById('captions').style.display = 'block'
+            document.getElementById('screenshot').style.display = 'block'
+            document.getElementById('playspeed').style.display = 'block'
+            document.getElementById('embedlink').style.display = 'block'
+            document.getElementById('filelink').style.display = 'block'
             document.getElementById("collapse").style.backgroundImage = 'url(/static/icons/tune-vertical.svg)'
         }
     }
-    document.getElementById('fullscreen').onpointerdown = (e) => {
+    document.getElementById('fullscreen').onclick = (e) => {
         if (e.pointerType == 'mouse' && e.button != 0) return
         getFullscreen()
     }
@@ -506,8 +711,9 @@ const init = () => {
             }
         }
         if (!bt) bt = ct
-        document.getElementById("seeker").style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0) 6px, var(--main-color) 6px, var(--main-color) calc(6px + ${ct * 100}% - 12px * ${ct}), rgba(223,223,223,0.75) calc(6px + ${ct * 100}% - 12px * ${ct}), rgba(223,223,223,0.75) calc(6px + ${bt * 100}% - 12px * ${bt}), rgba(191,191,191,0.5) calc(6px + ${bt * 100}% - 12px * ${bt}), rgba(191,191,191,0.5) calc(100% - 6px), rgba(191,191,191,0.5) calc(100% - 6px), rgba(0,0,0,0) calc(100% - 6px))`
-        document.getElementById("current").innerText = getTimeString(video.currentTime) + ' / ' + getTimeString(video.duration)
+        document.getElementById("seeker").style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0) 6px, var(--main-color) 6px calc(6px + ${ct * 100}% - 12px * ${ct}), rgba(223,223,223,0.75) calc(6px + ${ct * 100}% - 12px * ${ct}) calc(6px + ${bt * 100}% - 12px * ${bt}), rgba(191,191,191,0.5) calc(6px + ${bt * 100}% - 12px * ${bt}) calc(100% - 6px), rgba(0,0,0,0) calc(100% - 6px))`
+        let cts = getTimeString(video.currentTime) + ' / ' + getTimeString(video.duration)
+        if (document.getElementById("current").textContent != cts) document.getElementById("current").textContent = cts
         if (!!(video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2)) {
             document.getElementById("center").style.backgroundImage = 'url(/static/icons/pause.svg)'
             document.getElementById("play-pause").style.backgroundImage = 'url(/static/icons/pause.svg)'
@@ -518,15 +724,101 @@ const init = () => {
             document.getElementById("center").style.backgroundImage = 'url(/static/icons/play.svg)'
             document.getElementById("play-pause").style.backgroundImage = 'url(/static/icons/play.svg)'
         }
+        const textTracks = Array.from(video.textTracks).filter(v => v.mode=='showing')
+        if (!textTracks.length) document.querySelectorAll('#mask cue').forEach(c => c.remove())
+        textTracks.forEach(v => {
+            const currentCueList = Array.from(document.querySelectorAll('#mask cue')).map(c=>c.cue)
+            const activeCues = Array.from(v.activeCues || [])
+            document.querySelectorAll('#mask cue').forEach(c=>{
+                if (!activeCues.includes(c.cue)) c.remove()
+            })
+            activeCues.forEach((cue)=>{
+                if (currentCueList.includes(cue)) return
+                const c = document.createElement('cue')
+                c.cue = cue
+                c.innerHTML = cue.text.replace(/\<c\..*?\>/g, (v)=>{
+                    if (v.startsWith('<c.color') && v.length == 15) return ('<c style="color:#'+v.slice(8, -1)+';">')
+                    return ('<c class="'+v.slice(3, -1)+'">')
+                })
+                if (cue.line == 'auto') {
+                    c.style.bottom = '0.5lh'
+                } else if (cue.line) {
+                    c.style.top = `calc(${cue.line}%)` //  - ${(cue.text.split('\n').length*cue.line/100)}lh
+                } else {
+                    c.style.top = 0
+                }
+                if (cue.position == 'auto' || cue.position == 50) {
+                    c.style.left = 0
+                    c.style.right = 0
+                } else {
+                    if (cue.align == 'left') {
+                        c.style.left = cue.position.toString() + '%'
+                    } else if (cue.align == 'right') {
+                        c.style.right = (100 - cue.position).toString() + '%'
+                    } else if (cue.position > 50) {
+                        c.style.left = (cue.position * 2 - 100).toString() + '%'
+                        c.style.right = 0
+                    } else if (cue.position < 50) {
+                        c.style.left = 0
+                        c.style.right = (100 - cue.position * 2).toString() + '%'
+                    }
+                }
+                if (cue.size && cue.size != 100) {
+                    c.style.width = cue.size.toString() + '%'
+                }
+                c.style.textAlign = cue.align
+                document.querySelector('#mask').appendChild(c)
+            })
+        })
+    }
+    video.onloadedmetadata = () => {
+        if (navigator.mediaSession && video.duration) {
+            navigator.mediaSession.setPositionState({
+                duration: video.duration,
+                playbackRate: video.playbackRate,
+                position: video.currentTime
+            })
+        }
+    }
+    video.onseeking = video.onseeked = video.onratechange = () => {
+        if (navigator.mediaSession && video.duration) {
+            navigator.mediaSession.setPositionState({
+                duration: video.duration,
+                playbackRate: video.playbackRate,
+                position: video.currentTime
+            })
+        }
+    }
+    video.onplay = () => {
+        if (navigator.mediaSession) {
+            if (navigator.mediaSession.playbackState != 'playing') setTimeout(()=>{navigator.mediaSession.playbackState = 'playing'}, 0)
+            if (video.duration) navigator.mediaSession.setPositionState({
+                duration: video.duration,
+                playbackRate: video.playbackRate,
+                position: video.currentTime
+            })
+        }
+    }
+    video.onpause = () => {
+        if (navigator.mediaSession) {
+            if (navigator.mediaSession.playbackState != 'paused') setTimeout(()=>{navigator.mediaSession.playbackState = 'paused'}, 0)
+            if (video.duration) navigator.mediaSession.setPositionState({
+                duration: video.duration,
+                playbackRate: video.playbackRate,
+                position: video.currentTime
+            })
+        }
     }
     video.onended = () => {
-        if (video.currentTime == video.duration && musicLoopMode) {
+        if (navigator.mediaSession) navigator.mediaSession.playbackState = 'none'
+        if (video.currentTime == video.duration && !isMusic && musicLoopMode == 'random') {
+            toRandom()
+        } else if (video.currentTime == video.duration && musicLoopMode) {
             toNext()
-            video.play()
         }
     }
     const updateVolume = () => {
-        document.getElementById("volume").style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0) 6px, var(--main-color) 6px, var(--main-color) calc(6px + ${video.volume * 100}% - 12px * ${video.volume}), rgba(191,191,191,0.5) calc(6px + ${video.volume * 100}% - 12px * ${video.volume}), rgba(191,191,191,0.5) calc(100% - 6px), rgba(0,0,0,0) calc(100% - 6px))`
+        document.getElementById("volume").style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0) 6px, var(--main-color) 6px calc(6px + ${video.volume * 100}% - 12px * ${video.volume}), rgba(191,191,191,0.5) calc(6px + ${video.volume * 100}% - 12px * ${video.volume}) calc(100% - 6px), rgba(0,0,0,0) calc(100% - 6px))`
         document.getElementById("volume").value = video.volume
         if (video.muted) {
             document.getElementById("volume-icon").style.backgroundImage = 'url(/static/icons/volume-off.svg)'
@@ -539,19 +831,29 @@ const init = () => {
         }
         oneAlert('Volume: '+(video.muted ? 'Muted' : Math.floor(video.volume * 100)+'%'))
     }
-    const repeat = () => setTimeout(()=>{updateSeeker(); pointerWaitTime -= 20; repeat()}, 20)
+
+    let lastTime = performance.now()
+
+    const repeat = (currentTime) => {
+        const delta = currentTime - lastTime
+        lastTime = currentTime
+        updateSeeker()
+        pointerWaitTime -= delta
+        requestAnimationFrame(repeat)
+    }
+
     updateVolume()
     if (navigator.mediaSession) {
         navigator.mediaSession.metadata = new MediaMetadata({
-            title: document.querySelector('#player > h1') ? document.querySelector('#player > h1').innerText : document.querySelector('h1').innerText,
-            artist: document.querySelector('#player > h2') ? document.querySelector('#player > h2').innerText : undefined,
-            album: isMusic ? document.querySelectorAll('#player > h2')[2].innerText : undefined,
+            title: document.querySelector('#player > h1')?.textContent || document.querySelector('h1')?.textContent || location.pathname.split('/').pop(),
+            artist: document.querySelector('#player > h2')?.textContent || undefined,
+            album: document.querySelectorAll('#player > h2')[2]?.textContent || undefined,
             artwork: [  
                 {
-                    src: video.poster
+                    src: location.origin + '/t/' + location.pathname.slice(3)
                 }
             ]
-        });
+        })
         navigator.mediaSession.setActionHandler('play', ()=>{
             if (!(video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2)) {
                 video.play()
@@ -567,6 +869,7 @@ const init = () => {
         navigator.mediaSession.setActionHandler('stop', ()=>{
             if (!!(video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2)) {
                 video.pause()
+                if (navigator.mediaSession && navigator.mediaSession.playbackState != 'none') navigator.mediaSession.playbackState = 'none'
             }
             video.currentTime = 0
             // showMask()
@@ -581,54 +884,291 @@ const init = () => {
         })
         navigator.mediaSession.setActionHandler('seekto', ({seekTime})=>{
             video.currentTime = seekTime
+            if (video.duration) navigator.mediaSession.setPositionState({
+                duration: video.duration,
+                playbackRate: video.playbackRate,
+                position: seekTime
+            })
+            // showMask()
+        })
+        navigator.mediaSession.setActionHandler('previoustrack', ()=>{
+            if (video.currentTime > 5) {
+                video.currentTime = 0
+            } else toPrev()
+            // showMask()
+        })
+        navigator.mediaSession.setActionHandler('nexttrack', ()=>{
+            if (!isMusic && musicLoopMode == 'random') {
+                toRandom()
+            } else toNext()
             // showMask()
         })
     }
+    Array.from(document.querySelectorAll('#playlist > a')).forEach((v)=>{
+        v.onclick = (e) => {
+            e.preventDefault()
+            document.querySelector('#playlist > a.playing').classList.remove('playing')
+            const target = v
+            target.classList.add('playing')
+            toVideo(target)
+            if (isMusic) {
+                video.play()
+            }
+        }
+    })
     if (isMusic) {
         Array.from(document.querySelectorAll('#playlist > a')).sort(trackSorter).forEach((v)=>{
             document.getElementById('playlist').appendChild(v)
-            v.onclick = (e) => {
-                e.preventDefault()
-                document.querySelector('#playlist > a.playing').classList.remove('playing')
-                const target = v
-                target.classList.add('playing')
-                toVideo(target)
+        })
+        if (navigator.getAutoplayPolicy && navigator.getAutoplayPolicy("mediaelement") == 'allowed') {
+            video.play()
+        }
+    }
+    document.getElementById('left').onpointerdown = (e) => {
+        if (e.pointerType == 'mouse' && e.button != 0) return
+        toPrev()
+    }
+    document.getElementById('right').onpointerdown = (e) => {
+        if (e.pointerType == 'mouse' && e.button != 0) return
+        if (!isMusic && musicLoopMode == 'random') {
+            toRandom()
+            return
+        }
+        toNext()
+    }
+    window.onpopstate = () => { 
+        if (!isMusic && location.href.replace('/v/', '/f/') != video.src || isMusic && location.href.replace('/m/', '/f/') != video.src) {
+            document.querySelector('#playlist > a.playing').classList.remove('playing')
+            const target = Array.from(document.querySelectorAll('#playlist > a')).find(v=>v.pathname==location.pathname)
+            target.classList.add('playing')
+            toVideo(target, false, false)
+            if (isMusic && navigator.getAutoplayPolicy && navigator.getAutoplayPolicy("mediaelement") == 'allowed') {
                 video.play()
             }
-        })
-        if (navigator.getAutoplayPolicy && navigator.getAutoplayPolicy("mediaelement") == 'allowed') video.play()
-        window.onpopstate = () => { 
-            location.reload()
         }
-        if (navigator.mediaSession && navigator.mediaSession.setActionHandler) {
-            navigator.mediaSession.setActionHandler('previoustrack', ()=>{
-                if (video.currentTime > 5) {
-                    video.currentTime = 0
-                } else toPrev()
-                // showMask()
-            })
-            navigator.mediaSession.setActionHandler('nexttrack', ()=>{
-                toNext()
-                // showMask()
-            })
-        }
-        document.getElementById('left').onpointerdown = (e) => {
-            if (e.pointerType == 'mouse' && e.button != 0) return
-            toPrev()
-        }
-        document.getElementById('right').onpointerdown = (e) => {
-            if (e.pointerType == 'mouse' && e.button != 0) return
-            toNext()
-        }
-    } else {
-        document.getElementById('left').remove()
-        document.getElementById('right').remove()
     }
     tempStyle.remove()
     const current = document.querySelector('a.playing')
-    if (current) current.scrollIntoView()
-    document.body.scrollIntoView()
+    if (current) document.querySelector('#playlist').scrollTo({top:current.offsetTop-document.querySelector('#playlist').offsetTop})
     document.body.click()
     oneAlertHandler.push(null)
-    repeat()
-}
+    if (document.querySelector('nav')) {
+        const rd = document.createElement('a')
+        rd.textContent = 'Random'
+        rd.onclick = isMusic ? toRandom : () => {
+            const playlist = Array.from(document.querySelectorAll('#playlist > a'))
+            const index = playlist.findIndex((v)=>{return v.classList.contains('playing')})
+            let ni = Math.floor(Math.random()*(playlist.length-1))
+            if (ni >= index) ni += 1
+            const target = playlist[ni%playlist.length]
+            location.href = target.href
+        }
+        rd.style.position = 'absolute'
+        rd.style.margin = '0 auto'
+        rd.style.left = '0'
+        rd.style.right = '0'
+        rd.style.width = 'fit-content'
+        rd.style.cursor = 'pointer'
+        rd.style.textIndent = '0'
+        document.querySelector('nav').appendChild(rd)
+    }
+
+    const getUUID = () => 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0
+        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+
+    const createPlaylist = (name) => {
+        const uuid = getUUID()
+        const timestamp = +new Date
+        localStorage.setItem(uuid, JSON.stringify({
+            name,
+            items: [],
+            lastModification: timestamp,
+            creation: timestamp
+        }))
+        return uuid
+    }
+
+    if (!localStorage.getItem('User')) {
+        const likeListID = createPlaylist()
+        const dislikeListID = createPlaylist()
+        localStorage.setItem('User', JSON.stringify({
+            like: likeListID,
+            dislike: dislikeListID,
+            playlists: []
+        }))
+    }
+
+    const listBar = document.createElement('div')
+    listBar.id = 'listBar'
+    listBar.classList.add('invert-dark')
+    const likeButton = document.createElement('button')
+    likeButton.id = 'like'
+    likeButton.classList.toggle('listed', JSON.parse(localStorage.getItem(JSON.parse(localStorage.getItem('User')).like)).items?.includes(location.pathname.slice(3)))
+    likeButton.onpointerdown = () => {
+        const ref = location.pathname.slice(3)
+        const likeListID = JSON.parse(localStorage.getItem('User')).like
+        const likeList = JSON.parse(localStorage.getItem(likeListID))
+        if (!likeList.items) likeList.items = []
+        if (!likeList.items.includes(ref)) {
+            likeList.items.push(ref)
+            likeButton.classList.add('listed')
+        } else {
+            likeList.items.splice(likeList.items.indexOf(ref), 1)
+            likeButton.classList.remove('listed')
+        }
+        likeList.lastModification = +new Date
+        localStorage.setItem(likeListID, JSON.stringify(likeList))
+    }
+    const dislikeButton = document.createElement('button')
+    dislikeButton.id = 'dislike'
+    dislikeButton.classList.toggle('listed', JSON.parse(localStorage.getItem(JSON.parse(localStorage.getItem('User')).dislike)).items?.includes(location.pathname.slice(3)))
+    dislikeButton.onpointerdown = () => {
+        const ref = location.pathname.slice(3)
+        const dislikeListID = JSON.parse(localStorage.getItem('User')).dislike
+        const dislikeList = JSON.parse(localStorage.getItem(dislikeListID))
+        if (!dislikeList.items) dislikeList.items = []
+        if (!dislikeList.items.includes(ref)) {
+            dislikeList.items.push(ref)
+            dislikeButton.classList.add('listed')
+        } else {
+            dislikeList.items.splice(dislikeList.items.indexOf(ref), 1)
+            dislikeButton.classList.remove('listed')
+        }
+        dislikeList.lastModification = +new Date
+        localStorage.setItem(dislikeListID, JSON.stringify(dislikeList))
+    }
+    const playlistNavigator = document.createElement('div')
+    playlistNavigator.id = 'playlistNavigator'
+    playlistNavigator.classList.add('hidden')
+    playlistNavigator.onpointerdown = (event) => event.target == playlistNavigator && playlistNavigator.classList.add('hidden')
+    const navView = document.createElement('div')
+    const listNavBar = document.createElement('div')
+    listNavBar.id = 'playlistNavigatorBar'
+    const listNavView = document.createElement('div')
+    listNavView.id = 'playlistNavigatorView'
+    const listText = document.createElement('h1')
+    listText.innerHTML = 'Playlist'
+    const listbuttonView = document.createElement('div')
+    const clearButton = document.createElement('button')
+    clearButton.classList.add('button-clear')
+    clearButton.onpointerdown = () => {
+        if (!window.confirm("Are you sure you want to delete all of your playlists?")) return
+        const userData = JSON.parse(localStorage.getItem('User'))
+        userData.playlists = []
+        localStorage.setItem('User', JSON.stringify(userData))
+        updatePlaylists(listNavView)
+    }
+    const createButton = document.createElement('button')
+    createButton.classList.add('button-create')
+    createButton.onpointerdown = () => {
+        const newListId = createPlaylist()
+        const userData = JSON.parse(localStorage.getItem('User'))
+        userData.playlists.push(newListId)
+        localStorage.setItem('User', JSON.stringify(userData))
+        updatePlaylists(listNavView)
+    }
+    const unfilterButton = document.createElement('button')
+    unfilterButton.classList.add('button-unfilter')
+    unfilterButton.onpointerdown = () => {
+        currentPlaylist = null
+        updateVisibility()
+    }
+    const closeButton = document.createElement('button')
+    closeButton.classList.add('button-close')
+    closeButton.onpointerdown = () => playlistNavigator.classList.add('hidden')
+    listbuttonView.appendChild(clearButton)
+    listbuttonView.appendChild(createButton)
+    listbuttonView.appendChild(unfilterButton)
+    listbuttonView.appendChild(closeButton)
+    listNavBar.appendChild(listText)
+    listNavBar.appendChild(listbuttonView)
+    navView.appendChild(listNavBar)
+    navView.appendChild(listNavView)
+    playlistNavigator.appendChild(navView)
+    const getListView = (listId, removable = true, altName = undefined) => {
+        const listData = JSON.parse(localStorage.getItem(listId))
+        if (!listData) {
+            const itemView = document.createElement('div')
+            itemView.innerText = 'Playlist Not Found'
+            return itemView
+        }
+        if (!listData.items) listData.items = []
+        const {name, creation, lastModification, items} = listData
+        const itemView = document.createElement('div')
+        const textView = document.createElement('div')
+        const itemTitle = document.createElement('h1')
+        itemTitle.textContent = name || altName || 'An Unnamed Playlist'
+        const itemDate = document.createElement('h2')
+        itemDate.textContent = lastModification ? new Date(lastModification).toLocaleString() : 'Unknown'
+        textView.appendChild(itemTitle)
+        textView.appendChild(itemDate)
+        const deleteButton = document.createElement('button')
+        deleteButton.classList.add('button-delete')
+        deleteButton.onpointerdown = () => {
+            if (!window.confirm("Are you sure you want to delete this playlist?")) return
+            const userData = JSON.parse(localStorage.getItem('User'))
+            userData.playlists = userData.playlists.filter((lid) => lid != listId)
+            localStorage.setItem('User', JSON.stringify(userData))
+            localStorage.removeItem(listId)
+            updatePlaylists(listNavView)
+        }
+        const editButton = document.createElement('button')
+        editButton.onpointerdown = () => {
+            listData.name = window.prompt("Set Playlist Name", listData.name || '') ?? listData.name ?? null
+            listData.lastModification = +new Date
+            localStorage.setItem(listId, JSON.stringify(listData))
+            updatePlaylists(listNavView)
+        }
+        editButton.classList.add('button-edit')
+        const addOrRemoveButton = document.createElement('button')
+        addOrRemoveButton.classList.add(items.includes(location.pathname.slice(3)) ? 'button-remove' : 'button-add')
+        addOrRemoveButton.onpointerdown = () => {
+            if (!items.includes(location.pathname.slice(3))) {
+                items.push(location.pathname.slice(3))
+            } else {
+                items.splice(items.indexOf(location.pathname.slice(3)), 1)
+            }
+            listData.lastModification = +new Date
+            localStorage.setItem(listId, JSON.stringify(listData))
+            updatePlaylists(listNavView)
+        }
+        const playButton = document.createElement('button')
+        playButton.classList.add('button-play')
+        playButton.onpointerdown = () => {
+            currentPlaylist = items
+            updateVisibility()
+        }
+        itemView.appendChild(textView)
+        if (removable) itemView.appendChild(deleteButton)
+        itemView.appendChild(editButton)
+        itemView.appendChild(addOrRemoveButton)
+        itemView.appendChild(playButton)
+        return itemView
+    }
+    const updatePlaylists = (view) => {
+        view.innerHTML = ''
+        const { like, dislike, playlists } = JSON.parse(localStorage.getItem('User'))
+        view.appendChild(getListView(like, false, "Liked Videos"))
+        playlists.forEach((listId) => {
+            view.appendChild(getListView(listId, true))
+        })
+        view.appendChild(getListView(dislike, false, "Disliked Videos"))
+    }
+    const playlistButton = document.createElement('button')
+    playlistButton.id = 'editPlaylist'
+    playlistButton.onpointerdown = () => {
+        updatePlaylists(listNavView)
+        playlistNavigator.classList.remove('hidden')
+    }
+    listBar.appendChild(likeButton)
+    listBar.appendChild(playlistButton)
+    listBar.appendChild(dislikeButton)
+    player.appendChild(listBar)
+    document.body.appendChild(playlistNavigator)
+
+    requestAnimationFrame(repeat)
+})
+
+})()

@@ -80,7 +80,8 @@ func ParseVideo(p *Path, name string) (*Video, error) {
 	var mediaType MediaType
 	m, err := tag.ReadFrom(f)
 	if err != nil {
-		if ext == "WAV" {
+		switch ext {
+		case "WAV":
 			title = name
 			format = "WAVE"
 			filetype = "WAV"
@@ -88,7 +89,7 @@ func ParseVideo(p *Path, name string) (*Video, error) {
 			album = ""
 			comment = ""
 			mediaType = AUDIO
-		} else if ext == "WEBA" {
+		case "WEBA":
 			title = name
 			format = ""
 			filetype = "WEBA"
@@ -96,7 +97,7 @@ func ParseVideo(p *Path, name string) (*Video, error) {
 			album = ""
 			comment = ""
 			mediaType = AUDIO
-		} else if ext == "WEBM" {
+		case "WEBM":
 			title = name
 			format = ""
 			filetype = "WEBM"
@@ -104,7 +105,7 @@ func ParseVideo(p *Path, name string) (*Video, error) {
 			album = ""
 			comment = ""
 			mediaType = VIDEO
-		} else {
+		default:
 			return nil, err
 		}
 	} else {
