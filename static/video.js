@@ -743,12 +743,21 @@ window.addEventListener('load', () => {
                 if (cue.position == 'auto' || cue.position == 50) {
                     c.style.left = 0
                     c.style.right = 0
-                } else if (cue.position > 50) {
-                    c.style.left = (cue.position * 2 - 100).toString() + '%'
-                    c.style.right = 0
-                } else if (cue.position < 50) {
-                    c.style.left = 0
-                    c.style.right = (cue.position * 2).toString() + '%'
+                } else {
+                    if (cue.align == 'left') {
+                        c.style.left = cue.position.toString() + '%'
+                    } else if (cue.align == 'right') {
+                        c.style.right = (100 - cue.position).toString() + '%'
+                    } else if (cue.position > 50) {
+                        c.style.left = (cue.position * 2 - 100).toString() + '%'
+                        c.style.right = 0
+                    } else if (cue.position < 50) {
+                        c.style.left = 0
+                        c.style.right = (100 - cue.position * 2).toString() + '%'
+                    }
+                }
+                if (cue.size && cue.size != 100) {
+                    c.style.width = cue.size.toString() + '%'
                 }
                 c.style.textAlign = cue.align
                 document.querySelector('#mask').appendChild(c)
