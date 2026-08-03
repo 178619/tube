@@ -192,6 +192,13 @@ window.addEventListener('load', () => {
     }
     mask.style.display = 'block'
     const video = document.getElementById('video')
+    const isWebKit = /AppleWebKit(?!.*Chrome|.*Chromium)/i.test(window.navigator?.userAgent ?? '')
+    if (isWebKit) {
+        video.style.backgroundImage = 'url(/t/' + location.pathname.slice(3) + ')'
+        video.addEventListener('play', () => {
+            if (video.videoWidth && video.videoHeight) video.style.backgroundImage = null
+        })
+    }
     if (video.hasAttribute('controls')) video.removeAttribute('controls')
     const player = document.getElementById('player')
     const playOrPause = () => {
@@ -265,7 +272,7 @@ window.addEventListener('load', () => {
         document.querySelector('details.description > span').textContent = target.getAttribute('description')
         document.title = target.querySelector('h1').textContent + ' - Stube'
         video.poster = '/t/' + target.pathname.slice(3)
-        video.style.backgroundImage = 'url(/t/' + target.pathname.slice(3) + ')'
+        if (isWebKit) video.style.backgroundImage = 'url(/t/' + target.pathname.slice(3) + ')'
         document.getElementById('album').pathname = (isMusic ? '/v/' : '/m/') + target.pathname.slice(3)
         document.getElementById('filelink').setAttribute('href', '/f/' + target.pathname.slice(3))
         removeMenus()
