@@ -8,6 +8,7 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gorilla/mux v1.8.1
+	github.com/spf13/pflag v1.0.10
 	github.com/wybiral/feeds v1.1.1
 	github.com/wybiral/torgo v0.0.0-20201209223426-5fd9910eab31
 	golang.org/x/crypto v0.40.0
